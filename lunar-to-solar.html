@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>음력 → 양력 변환기</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; max-width: 420px; margin: auto; line-height: 1.5; }
+  input, select, button { width: 100%; padding: 8px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+  button { background: #ff7f39; color: #fff; border: none; cursor: pointer; }
+  button:hover { background: #ff6a17; }
+  .result { margin-top: 12px; padding: 12px; background: #f7f7f7; border-radius: 6px; word-break: break-word; }
+  .muted { color: #666; font-size: 0.9em; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h2>음력 → 양력 변환기</h2>
+
+<label>음력 날짜 입력</label>
+<input type="date" id="lunarDate" aria-label="음력 날짜 입력">
+
+<label>윤달 여부</label>
+<select id="leapMonth" aria-label="윤달 여부">
+  <option value="0">해당 없음</option>
+  <option value="1">윤달</option>
+</select>
+
+<button id="convertBtn">🔄 양력으로 변환</button>
+
+<div class="result" id="result">양력 날짜가 여기에 표시됩니다.</div>
+<div class="muted">참고: 한국천문연구원 API는 브라우저에서 CORS로 차단될 수 있습니다. 아래 안내를 참고하세요.</div>
+
+<script>
+document.getElementById("convertBtn").addEventListener("click", convert);
+
+async function convert() {
+  const lunar = document.getElementById("lunarDate").value; // YYYY-MM-DD
+  const leap = document.getElementById("leapMonth").value; // "0" or "1"
+  const resultEl = document.getElementById("result");
+
+  if (!lunar) { resultEl.innerText = "날짜를 입력하세요."; return; }
+
+  // KASI API expects d=YYYY-MM-DD, m=1 for lunar->solar, k = leap
+  const apiUrl = `https://astro.kasi.re.kr/lst/data?d=${encodeURIComponent(lunar)}&k=${leap}&m=1`;
+  resultEl.innerText = "변환 중...";
+
+  try {
+    const res = await fetch(apiUrl, { headers: { "Accept": "application/json" } });
+    if (!res.ok) { resultEl.innerText = `변환 오류: 서버 응답 ${res.status}`; return; }
+    const data = await res.json();
+    if (data && data.Solar) {
+      resultEl.innerHTML = `<b>${data.Solar}</b><br>노션 속성에 그대로 복사해서 사용하세요!`;
+    } else {
+      resultEl.innerText = "변환 오류: 예상한 응답이 아닙니다. 응답: " + JSON.stringify(data);
+    }
+  } catch (err) {
+    resultEl.innerText = "변환 실패. 네트워크 또는 CORS 문제일 수 있습니다.\n오류: " + err.message;
+  }
+}
+</script>
+
+</body>
+</html>
