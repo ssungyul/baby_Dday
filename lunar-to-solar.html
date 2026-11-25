@@ -1,63 +1,166 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>음력 → 양력 변환기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아기 만나는 날</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+
 <style>
-  body { font-family: sans-serif; padding: 20px; max-width: 420px; margin: auto; line-height: 1.5; }
-  input, select, button { width: 100%; padding: 8px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-  button { background: #ff7f39; color: #fff; border: none; cursor: pointer; }
-  button:hover { background: #ff6a17; }
-  .result { margin-top: 12px; padding: 12px; background: #f7f7f7; border-radius: 6px; word-break: break-word; }
-  .muted { color: #666; font-size: 0.9em; margin-top: 6px; }
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 12px;
+    background: #F5F0E9;
+    font-family: 'Gowun Dodum', sans-serif;
+    color: #665346;
+  }
+
+  .widget {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 32px 22px 25px;
+    background: #FFFCF7;
+    border: 1px solid #EDE4D9;
+    border-radius: 22px;
+    text-align: center;
+  }
+
+  .eyebrow {
+    margin: 0 0 27px;
+    color: #A89787;
+    font-size: 11px;
+    letter-spacing: 3px;
+    font-weight: 400;
+  }
+
+  h1 {
+    margin: 0;
+    color: #6C5748;
+    font-family: 'Gowun Batang', serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+
+  .dday-area {
+    margin: 25px 0 0;
+    padding: 27px 10px 29px;
+    background: #F8F3EC;
+    border-radius: 17px;
+  }
+
+  .dday {
+    color: #A17E63;
+    font-family: 'Gowun Batang', serif;
+    font-size: clamp(48px, 14vw, 64px);
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dday-label {
+    margin-top: 12px;
+    color: #A89787;
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 12px;
+  }
+
+  .footer {
+    margin-top: 22px;
+    color: #B1A294;
+    font-family: 'Gowun Batang', serif;
+    font-size: 12px;
+    letter-spacing: 0.2px;
+  }
+
+  .error {
+    color: #A65E50;
+    font-size: 13px;
+    padding: 20px 0;
+  }
 </style>
 </head>
+
 <body>
+<div class="widget">
+  <p class="eyebrow">OUR LITTLE ONE</p>
+  <h1>아기 만나는 날</h1>
 
-<h2>음력 → 양력 변환기</h2>
+  <div id="content">
+    <div class="dday-area">
+      <div class="dday" id="dday">D-000</div>
+      <div class="dday-label" id="label">
+        우리 아기를 만날 날까지
+      </div>
+    </div>
+  </div>
 
-<label>음력 날짜 입력</label>
-<input type="date" id="lunarDate" aria-label="음력 날짜 입력">
-
-<label>윤달 여부</label>
-<select id="leapMonth" aria-label="윤달 여부">
-  <option value="0">해당 없음</option>
-  <option value="1">윤달</option>
-</select>
-
-<button id="convertBtn">🔄 양력으로 변환</button>
-
-<div class="result" id="result">양력 날짜가 여기에 표시됩니다.</div>
-<div class="muted">참고: 한국천문연구원 API는 브라우저에서 CORS로 차단될 수 있습니다. 아래 안내를 참고하세요.</div>
+  <div class="footer">
+    매일 조금씩 가까워지는 우리의 만남
+  </div>
+</div>
 
 <script>
-document.getElementById("convertBtn").addEventListener("click", convert);
+  const params = new URLSearchParams(location.search);
+  const due = params.get("due");
 
-async function convert() {
-  const lunar = document.getElementById("lunarDate").value; // YYYY-MM-DD
-  const leap = document.getElementById("leapMonth").value; // "0" or "1"
-  const resultEl = document.getElementById("result");
+  const ddayElement = document.getElementById("dday");
+  const labelElement = document.getElementById("label");
 
-  if (!lunar) { resultEl.innerText = "날짜를 입력하세요."; return; }
-
-  // KASI API expects d=YYYY-MM-DD, m=1 for lunar->solar, k = leap
-  const apiUrl = `https://astro.kasi.re.kr/lst/data?d=${encodeURIComponent(lunar)}&k=${leap}&m=1`;
-  resultEl.innerText = "변환 중...";
-
-  try {
-    const res = await fetch(apiUrl, { headers: { "Accept": "application/json" } });
-    if (!res.ok) { resultEl.innerText = `변환 오류: 서버 응답 ${res.status}`; return; }
-    const data = await res.json();
-    if (data && data.Solar) {
-      resultEl.innerHTML = `<b>${data.Solar}</b><br>노션 속성에 그대로 복사해서 사용하세요!`;
-    } else {
-      resultEl.innerText = "변환 오류: 예상한 응답이 아닙니다. 응답: " + JSON.stringify(data);
-    }
-  } catch (err) {
-    resultEl.innerText = "변환 실패. 네트워크 또는 CORS 문제일 수 있습니다.\n오류: " + err.message;
+  function showError() {
+    document.getElementById("content").innerHTML =
+      '<div class="error">출산 예정일을 확인해 주세요.</div>';
   }
-}
-</script>
 
+  if (!due || !/^\d{4}-\d{2}-\d{2}$/.test(due)) {
+    showError();
+  } else {
+    const [year, month, day] = due.split("-").map(Number);
+    const target = new Date(year, month - 1, day);
+
+    const validDate =
+      target.getFullYear() === year &&
+      target.getMonth() === month - 1 &&
+      target.getDate() === day;
+
+    if (!validDate) {
+      showError();
+    } else {
+      function updateDday() {
+        const now = new Date();
+        const today = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+
+        const diff = Math.round(
+          (target.getTime() - today.getTime()) / 86400000
+        );
+
+        if (diff > 0) {
+          ddayElement.textContent = `D-${diff}`;
+          labelElement.textContent = "우리 아기를 만날 날까지";
+        } else if (diff === 0) {
+          ddayElement.textContent = "D-DAY";
+          labelElement.textContent = "오늘, 아기를 만나는 날";
+        } else {
+          ddayElement.textContent = `D+${Math.abs(diff)}`;
+          labelElement.textContent = "아기와 함께한 소중한 시간";
+        }
+      }
+
+      updateDday();
+    }
+  }
+</script>
 </body>
 </html>
